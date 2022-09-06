@@ -5,7 +5,7 @@
 
 1. Run npm install to install all the required dependencies.
 2. Run npm start or npx react-native run-android (for android) or npx react-native run-ios (for ios).
-3. Add custom RoomName and RoomPassword in config.js file to start zoom meeting.
+3. Add custom RoomName and RoomPassword in config.js file present in src/config folder to start zoom meeting.
 
 
 # Problem Statement in Android: 
