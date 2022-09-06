@@ -63,5 +63,5 @@ Refer Link : https://marketplace.zoom.us/docs/sdk/video/ios/advanced/screen-shar
 
 # Problem Facing - 
 
-Using Objective C Language for that , we are able to start broadcast on debug device. However , At the same time we are not able to sync with Zoom Platform with Broadcasting. we are not have the SampleHandler class where the code to handle different broadcasting events resides. To handle the events. We are facing 'ZoomVideoSDKScreenShare/ZoomVideoSDKScreenShareService’ file not found.
+Using Objective C Language for that , we are able to start broadcast on debug device. However , At the same time we are not able to sync with Zoom Platform with Broadcasting. we are not have the SampleHandler class where the code to handle different broadcasting events resides. To handle the events. We are facing 'ZoomVideoSDKScreenShare/ZoomVideoSDKScreenShareService.h’ file not found.
 
