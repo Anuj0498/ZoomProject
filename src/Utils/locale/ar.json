@@ -1,0 +1,13 @@
+{
+  "translation": {
+    "welcome": {
+      "welcome": "أهلا بك",
+      "signUp": "سجل",
+      "or": "أو",
+      "logInTO": "تسجيل الدخول",
+      "english": "اللغة الإنجليزية",
+      "arabic": "اللغة عربى",
+      "languages": "اللغات"
+    }
+  }
+}

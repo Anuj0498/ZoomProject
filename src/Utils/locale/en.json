@@ -1,0 +1,44 @@
+{
+  "translation": {
+    "splash": {
+      "copyRight": "Copyright © 2021 LaunchMyCareer Pvt. Ltd. All Rights Reserved"
+    },
+    "login": {
+      "logInTO": "LON IN TO",
+      "launchmycareer": "LAUNCHMYCAREER",
+      "accountWithNum": "This phone number is not registered yet. \n create account with this number? ",
+      "close": "Close",
+      "createAccount": "CREATE ACCOUNT",
+      "notRegistered": "NOT REGISTERED",
+      "mobileNum": "Mobile Number",
+      "emailAddress": "Email Address",
+      "mobileNumber": "Mobile Number *",
+      "email": "Email Address",
+      "emailOrMobile": "Email or mobile number*",
+      "enterEmailOrMobile": "Enter your email or mobile number*",
+      "enterMobileNum": "Enter Your Mobile Number",
+      "enterEmail": "Enter your Email",
+      "withPassword": "Login with password",
+      "withEmail": "Login with email",
+      "withEmailID": "Use Email",
+      "withPhoneNum": "Use Phone",
+      "withPhone": "Login with phone",
+      "enterPassword": "Enter Password",
+      "enterYourPassword": "Enter Your password",
+      "forgotPassword": "Forgot Password?",
+      "withOtp": "Login with OTP",
+      "onMobileNum": "Please Enter the verification code we have sent you on ",
+      "passCode": "Enter one time passcode",
+      "enterOtp": "Enter OTP",
+      "resend": "Resend: 59s",
+      "agree": "By continuing, you agree with the",
+      "terms": "Terms & Conditions ",
+      "and": " and ",
+      "policy": "Privacy & policy",
+      "signUp": "Sign up",
+      "sendCode": "Send Code",
+      "login": "Login"
+    },
+    "createAccount": {}
+  }
+}
