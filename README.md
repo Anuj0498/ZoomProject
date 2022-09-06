@@ -47,3 +47,21 @@ const isOtherSharing = await zoom.shareHelper.isOtherSharing();
       zoom.shareHelper.shareScreen(); // App got crash here
     }
   };
+  
+  
+  # Problem Statement in IOS:
+  
+  
+- User unable to screen share in IOS
+
+
+# Steps Followed - 
+
+1. Followed Zoom Developer Document For iOS ScreenSharing ( Broadcast the device screen).
+Refer Link : https://marketplace.zoom.us/docs/sdk/video/ios/advanced/screen-share/broadcast/#broadcast-the-device-screen
+
+
+# Problem Facing - 
+
+Using Objective C Language for that , we are able to start broadcast on debug device. However , At the same time we are not able to sync with Zoom Platform with Broadcasting. we are not have the SampleHandler class where the code to handle different broadcasting events resides. To handle the events. We are facing 'ZoomVideoSDKScreenShare/ZoomVideoSDKScreenShareService’ file not found.
+
