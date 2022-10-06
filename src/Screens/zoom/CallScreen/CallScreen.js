@@ -17,6 +17,12 @@ import {
 } from 'react-native';
 import {
   PERMISSIONS,
+  Permission,
+  PermissionStatus,
+  RESULTS,
+  checkMultiple,
+  openSettings,
+  requestMultiple,
 } from 'react-native-permissions';
 import Animated, {
   Easing,
@@ -27,11 +33,16 @@ import Animated, {
 import {
   Errors,
   EventType,
+  LiveStreamStatus,
+  PhoneFailedReason,
+  PhoneStatus,
   RecordingStatus,
   ShareStatus,
   VideoPreferenceMode,
   ZoomVideoSdkChatMessage,
+  ZoomVideoSdkChatMessageType,
   ZoomVideoSdkUser,
+  ZoomVideoSdkUserType,
   useZoom,
 } from '@zoom/react-native-videosdk';
 import React, { useEffect, useRef, useState } from 'react';
@@ -41,10 +52,12 @@ import LinearGradient from 'react-native-linear-gradient';
 import VideoView from '../../../Components/VideoView/VideoView';
 import generateJwt from '../../../Utils/hooks/jwt';
 import deviceInfoModule from 'react-native-device-info';
+import { use } from 'i18next';
 import { useIsMounted } from '../../../Utils/hooks/hooks';
 import Images from '../../../Utils/Images';
 import { useIsFocused } from '@react-navigation/native';
-import { BackHandler } from 'react-native';
+import { ZoomVideoSdkVideoHelper } from '@zoom/react-native-videosdk/lib/typescript/native/ZoomVideoSdkVideoHelper.d.ts';
+import GalleryView from '../../../Components/GalleryView/GalleryView';
 
 const CallScreen = ({ navigation, route }) => {
   const [isInSession, setIsInSession] = useState(false);
@@ -96,9 +109,31 @@ const CallScreen = ({ navigation, route }) => {
     ],
   };
 
-  useEffect(() => {
-    BackHandler.addEventListener('hardwareBackPress', () => { return false; })
-  }, []);
+  // useEffect(() => {
+  //   focus &&
+  //     (async () => {
+  //       if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
+  //         return;
+  //       }
+
+  //       const permissions = platformPermissions[Platform.OS];
+  //       let blockedAny = false;
+  //       let notGranted = [];
+
+  //       checkMultiple(permissions).then((statuses, PermissionStatus) => {
+  //         permissions.map((p) => {
+  //           const status = statuses[p];
+  //           if (status === RESULTS.BLOCKED) {
+  //             blockedAny = true;
+  //           } else if (status !== RESULTS.GRANTED) {
+  //             notGranted.push(p);
+  //           }
+  //         });
+  //         notGranted.length && requestMultiple(notGranted);
+  //         blockedAny && openSettings();
+  //       });
+  //     })();
+  // }, [focus]);
 
   useEffect(() => {
     focus &&
@@ -108,9 +143,10 @@ const CallScreen = ({ navigation, route }) => {
         const token = await generateJwt(params.sessionName, params.roleType);
         try {
           await zoom.joinSession({
-            sessionName: params.sessionName,
-            sessionPassword: params.sessionPassword,
-            token: token,
+            sessionName: "348-7935-681-7d52f8",
+            sessionPassword: "0f928f63",
+            // token: params.webHook ? params.webHook : token,
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfa2V5IjoiblpMd1k4cmx0RXhSdm5aTmI0TFV4Rjh2OEZxcnJNYU9kVVlDIiwiaWF0IjoxNjY0NTIwMjA3LCJleHAiOjE2NjQ2NjQyMDcsInRwYyI6IjM0OC03OTM1LTY4MS03ZDUyZjgiLCJwd2QiOiIwZjkyOGY2MyIsInVzZXJfaWRlbnRpdHkiOiJzd2FkaGluIHBhdHJvIiwic2Vzc2lvbl9rZXkiOiIzNDgtNzkzNS02ODEtN2Q1MmY4Iiwicm9sZV90eXBlIjoxfQ.969ABUs5mZYxXiczNYt-69H6m9w7ey2dfOsWykFWR2g",
             userName: params.displayName,
             audioOptions: {
               connect: true,
@@ -121,6 +157,7 @@ const CallScreen = ({ navigation, route }) => {
             },
             sessionIdleTimeoutMins: parseInt(params.sessionIdleTimeoutMins, 10),
           });
+          await zoom.shareHelper.lockShare(false);
         } catch (e) {
           console.log('err=> ', err);
           Alert.alert('Failed to join the session');
@@ -129,11 +166,18 @@ const CallScreen = ({ navigation, route }) => {
       })();
   }, [focus]);
 
+  // useEffect(() => {
+  //   console.log('here');
+  //   (async () => {
+  //     const myself = await zoom.session.getMySelf();
+
+  //     setUserInfo(myself);
+
+  //     setFullScreenUser(myself);
+  //   })();
+  // }, [zoom?.session?.userId !== '']);
 
   useEffect(() => {
-    zoom.shareHelper.lockShare(false); //to grant share screen access by host
-
-    console.log(deviceInfoModule.getModel(), fullScreenUser);
     const updateVideoInfo = () => {
       // console.log('fullScreenUser12321', fullScreenUser);
       videoInfoTimer.current = setTimeout(async () => {
@@ -182,12 +226,12 @@ const CallScreen = ({ navigation, route }) => {
         // console.log('alert==>>session', JSON.stringify(session));
 
         const mySelf = await new ZoomVideoSdkUser(session.mySelf);
-        console.log('alert==>>sessionMYSELF', JSON.stringify(mySelf));
+        // console.log('alert==>>sessionMYSELF', JSON.stringify(mySelf));
         const remoteUsers = await zoom.session.getRemoteUsers();
         const muted = await mySelf.audioStatus.isMuted();
         const videoOn = await mySelf.videoStatus.isOn();
         const speakerOn = await zoom.audioHelper.getSpeakerStatus();
-        
+
         setUsersInSession([...remoteUsers, mySelf]);
         setIsMuted(muted);
         setIsVideoOn(videoOn);
@@ -260,7 +304,7 @@ const CallScreen = ({ navigation, route }) => {
     const userLeaveListener = zoom.addListener(
       EventType.onUserLeave,
       async ({ remoteUsers, leftUsers }) => {
-        console.log("leave")
+        console.log('leave');
         if (!isMounted()) return;
         const mySelf = await zoom.session.getMySelf();
         const remote = remoteUsers.map((user) => new ZoomVideoSdkUser(user));
@@ -295,18 +339,21 @@ const CallScreen = ({ navigation, route }) => {
     const userShareStatusChangeListener = zoom.addListener(
       EventType.onUserShareStatusChanged,
       async ({ user, status }) => {
-        const shareUser = new ZoomVideoSdkUser(user);
-        const mySelf = await zoom.session.getMySelf();
+        try {
+          const shareUser = new ZoomVideoSdkUser(user);
+          const mySelf = await zoom.session.getMySelf();
 
-        if (user.userId && status === ShareStatus.Start) {
-          // console.log(fullScreenUser?.userId == shareUser?.userId);
-          console.log('User =>>>>>>>>>>>>>>>>', shareUser, mySelf);
-          // setSharingUser(shareUser);
-          // setFullScreenUser(shareUser);
-          // setIsSharing(shareUser.userId === mySelf.userId);
-        } else {
-          setSharingUser(undefined);
-          setIsSharing(false);
+          if (user.userId && status === ShareStatus.Start) {
+            console.log('User =>>>>>>>>>>>>>>>>', shareUser);
+            setSharingUser(shareUser);
+            setFullScreenUser(shareUser);
+            setIsSharing(shareUser.userId === mySelf.userId);
+          } else {
+            setSharingUser(undefined);
+            setIsSharing(false);
+          }
+        } catch (e) {
+          console.log("ERrrrrrrrr=>>>>>>>>>", e);
         }
       }
     );
@@ -314,6 +361,7 @@ const CallScreen = ({ navigation, route }) => {
     const commandReceived = zoom.addListener(
       EventType.onCommandReceived,
       (params) => {
+        console.log("inside")
         // console.log(
         //   'sender: ' + params.sender + ', command: ' + params.command
         // );
@@ -350,16 +398,22 @@ const CallScreen = ({ navigation, route }) => {
       }
     );
 
+    // const inviteByPhoneStatusListener = zoom.addListener(
+    //   EventType.onInviteByPhoneStatus,
+    //   (params) => {
+    //     console.log('status: ' + params.status + ', reason: ' + params.reason);
+    //   }
+    // );
 
     const eventErrorListener = zoom.addListener(
       EventType.onError,
       async (error) => {
-        // console.log('Error: ' + JSON.stringify(error));
+        console.log('Error: ' + JSON.stringify(error));
         // Alert.alert('Error: ' + JSON.stringify(error));
         switch (error.errorType) {
           case Errors.SessionJoinFailed:
             // Alert.alert('Failed to join the session');
-            setTimeout(() => navigation.goBack(), 1000);
+            // setTimeout(() => navigation.goBack(), 1000);
             break;
           default:
         }
@@ -406,6 +460,10 @@ const CallScreen = ({ navigation, route }) => {
 
   // onPress event for FlatList since RN doesn't provide container-on-press event
   const onListTouchEnd = (event) => {
+    // Toggle UI behavior
+    // - Toggle only when user list or chat list is tapped
+    // - Block toggling when tapping on a list item
+    // - Block toggling when keyboard is shown
     if (event._targetInst.elementType.includes('Scroll') && isKeyboardOpen) {
       !isLongTouchRef.current && toggleUI();
     }
@@ -496,6 +554,22 @@ const CallScreen = ({ navigation, route }) => {
       : zoom.audioHelper.muteAudio(mySelf.userId);
   };
 
+  const onPressSpeaker = async () => {
+    const speakerStatus = await zoom.audioHelper.getSpeakerStatus();
+
+    const setSpeaker = await zoom.audioHelper.setSpeaker(!speakerStatus);
+
+    setIsSpeakerOn(speakerStatus);
+
+  }
+
+  const onSwitchCamera = async () => {
+    const cameraList = await zoom.videoHelper.getCameraList();
+    console.log(cameraList); // [{"deviceId": "1", "deviceName": "Built-in Camera Front"}, {"deviceId": "0", "deviceName": "Built-in Camera Back"}]
+
+    await zoom.videoHelper.switchCamera();
+  }
+
   const onPressVideo = async () => {
     const mySelf = await zoom.session.getMySelf();
     console.log('mySelf=> ', mySelf);
@@ -505,23 +579,63 @@ const CallScreen = ({ navigation, route }) => {
     setIsVideoOn(videoOn);
     videoOn ? zoom.videoHelper.stopVideo() : zoom.videoHelper.startVideo();
 
+    // const cameraList = await zoom.videoHelper.getCameraList(); // [{"deviceId": "1", "deviceName": "Built-in Camera Front"}, {"deviceId": "0", "deviceName": "Built-in Camera Back"}]
+    // console.log(cameraList);
+
+    // const cameraSwitch = await zoom.videoHelper.switchCamera();  // working Ahhhh yeahhhhhhhh
+    // console.log(cameraSwitch);
+
+    // const canSwitchSpeaker = await zoom.audioHelper.canSwitchSpeaker(); //working
+    // console.log(canSwitchSpeaker);
+
+    // const speakerStatus = await zoom.audioHelper.getSpeakerStatus(); // working
+    // console.log(speakerStatus);
+
+    // const numOfCamera = await zoom.videoHelper.getNumberOfCameras(); //crashes
+    // console.log(numOfCamera);
+
+    // const camera = await (zoom.videoHelper.rotateMyVideo()); // crashes
+    // console.log(camera);
+
+    // const isOtherSharing = await zoom.shareHelper.isOtherSharing(); // working
+    // console.log(isOtherSharing);
+
+    // const isScreenSharingOut = await zoom.shareHelper.isScreenSharingOut();
+    // console.log(isScreenSharingOut);
+
+    // const isShareLocked = await zoom.shareHelper.isShareLocked();
+    // console.log(isShareLocked);
+
+    // const isSharingOut = await zoom.shareHelper.isSharingOut();
+    // console.log(isSharingOut);
+
+
+
+    // console.log('before');
+    // zoom.shareHelper.lockShare(true);
+    // console.log('after');
   };
 
   const onPressShare = async () => {
-    
     const isOtherSharing = await zoom.shareHelper.isOtherSharing();
     const isShareLocked = await zoom.shareHelper.isShareLocked();
 
-    if (isOtherSharing) {
-      Alert.alert('Other is sharing');
-    } else if (isShareLocked) {
-      Alert.alert('Share is locked by host'); // lock share is false, still it is showing share is locked by host
-    } else if (isSharing) {
+    // if (isOtherSharing) {
+    //   Alert.alert('Other is sharing');
+    // } else if (isShareLocked) {
+    //   Alert.alert('Share is locked by host');
+    // } else if (isSharing) {
+    //   zoom.shareHelper.stopShare();
+    // } else {
+    //   zoom.shareHelper.shareScreen();
+    // }
+    if (isSharing) {
       zoom.shareHelper.stopShare();
     } else {
-      zoom.shareHelper.shareScreen(); // Android app crashes here
+      zoom.shareHelper.shareScreen();
     }
   };
+
 
   const onPressMore = async () => {
     const mySelf = await zoom.session.getMySelf();
@@ -686,6 +800,7 @@ const CallScreen = ({ navigation, route }) => {
   // console.log('fullScreenUse43ede3er', JSON.stringify(fullScreenUser));
   return (
     <View style={contentStyles}>
+      {console.log(deviceInfoModule.getModel(), fullScreenUser, 'here')}
       <StatusBar hidden />
       <View style={styles.fullScreenVideo}>
         <VideoView
@@ -696,7 +811,6 @@ const CallScreen = ({ navigation, route }) => {
           }}
           fullScreen
         />
-      
       </View>
 
       <LinearGradient
@@ -791,7 +905,7 @@ const CallScreen = ({ navigation, route }) => {
         </Animated.View>
 
         <View style={styles.bottomWrapper} pointerEvents='box-none'>
-          { isInSession && (
+          {isInSession && (
             <FlatList
               style={styles.userList}
               contentContainerStyle={styles.userListContentContainer}
@@ -800,10 +914,20 @@ const CallScreen = ({ navigation, route }) => {
               data={users}
               extraData={users}
               renderItem={({ item }) => (
-                <VideoView
-                  user={item}
+                // <VideoView
+                //   user={item.userId == userInfo?.userId ? userInfo : item}
+                //   focused={item.userId === fullScreenUser?.userId}
+                //   onPress={(selectedUser) => {
+                //     setFullScreenUser(selectedUser);
+                //   }}
+                //   key={item.userId}
+                // />
+                <GalleryView
+                  user={item.userId == userInfo?.userId ? userInfo : item}
                   focused={item.userId === fullScreenUser?.userId}
-                  onPress={(selectedUser) => { setFullScreenUser(selectedUser) }}
+                  onPress={(selectedUser) => {
+                    setFullScreenUser(selectedUser);
+                  }}
                   key={item.userId}
                 />
               )}
@@ -903,7 +1027,7 @@ const CallScreen = ({ navigation, route }) => {
           <TouchableOpacity onPress={onPressAudio}>
             <Image source={Images.zoomMic} style={{ height: 45, width: 45 }} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onPressAudio}>
+          <TouchableOpacity onPress={onPressSpeaker}>
             <Image
               source={Images.zoomAudio}
               style={{ height: 45, width: 45 }}
@@ -919,12 +1043,6 @@ const CallScreen = ({ navigation, route }) => {
             <Image
               source={Images.zoomMessage}
               style={{ height: 45, width: 45 }}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onPressShare}>
-            <Image
-              source={Images.zoomShare}
-              style={{ height: 45, width: 45, borderRadius: 100 }}
             />
           </TouchableOpacity>
           <TouchableOpacity onPress={onPressLeave}>
